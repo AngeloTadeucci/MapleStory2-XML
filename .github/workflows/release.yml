@@ -1,4 +1,4 @@
-name: Build Server M2D
+name: Build M2Ds
 
 on:
   push:
@@ -8,25 +8,36 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: "test"
-          sparse-checkout: |
-            Server
-            Tools
-      - name: Build
+          ref: test
+      - name: Build Server
         run: cd Tools && .\MS2Create.exe ../Server ../ Server MS2F
-      - name: Hash
-        run: certutil -hashfile Server.m2d MD5
+      - name: Build XML
+        run: cd Tools && .\MS2Create.exe ../Xml ../ Xml MS2F
+      - name: Hash Server
+        run: certutil -hashfile Server.m2d MD5 > Server.m2d.txt
+      - name: Hash Xml
+        run: certutil -hashfile Xml.m2d MD5 > Xml.m2d.txt
       - name: Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          body: |
+            Server.m2d hash:
+            ```
+            $(cat Server.m2d.txt)
+            ```
+            Xml.m2d hash:
+            ```
+            $(cat Xml.m2d.txt)
+            ```
           generate_release_notes: true
           files: |
             Server.m2d
             Server.m2h
+            Xml.m2d
+            Xml.m2h
 
