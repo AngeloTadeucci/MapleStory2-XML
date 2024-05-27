@@ -1,0 +1,32 @@
+name: Build Server M2D
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: "test"
+          sparse-checkout: |
+            Server
+            Tools
+      - name: Build
+        run: cd Tools && .\MS2Create.exe ../Server ../ Server MS2F
+      - name: Hash
+        run: certutil -hashfile Server.m2d MD5
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        generate_release_notes: true
+        with:
+          files: |
+            Server.m2d
+            Server.m2h
+
